@@ -1,0 +1,21 @@
+{
+  "name": "cjdnstool",
+  "version": "1.0.1",
+  "description": "Diagnostic tools for cjdns",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Caleb James DeLisle",
+  "license": "GPL-3.0+",
+  "dependencies": {
+    "cjdnsadmin": "^0.0.1",
+    "cjdnsctrl": "^0.0.4",
+    "cjdnsencode": "^0.0.3",
+    "cjdnskeys": "^0.1.5",
+    "cjdnsniff": "^0.2.6",
+    "cjdnsplice": "^0.2.1",
+    "minimist": "^1.2.0"
+  },
+  "bin": { "cjdnstool" : "./cjdnstool.js" }
+}
