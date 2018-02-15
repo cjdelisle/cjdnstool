@@ -2,6 +2,7 @@
 const Cjdnskeys = require('cjdnskeys');
 const Cjdnstools = require('./index.js');
 const nThen = require('nthen');
+const Minimist = require('minimist');
 
 const getPeers = (dest, newPf, debug) => {
     let ct;
@@ -56,29 +57,21 @@ const usage = module.exports.usage = () => {
     console.log("cjdnstool query COMMAND");
     console.log("    getpeers [-2][-v] <nodename|ipv6|hostname>");
     console.log("        -2                        # request from the subnode pathfinder");
-    console.log("        -v                        # debug (verbose)");
+    console.log("        -v, --verbose             # print debug information");
+    console.log("        -p <pref>, --pref=<pref>  # use specified address resolution preference");
 };
 
 const main = module.exports.main = (argv /*:Array<string>*/) => {
     if (argv[0] !== 'getpeers') { return void usage(); }
-    argv.shift();
-    let newPf = false;
-    let debug = false;
-    for (;;) {
-        if (argv[0] === '-2') {
-            newPf = true;
-            argv.shift();
-        } else if (argv[0] === '-v') {
-            debug = true;
-            argv.shift();
-        } else {
-            break;
-        }
-    }
-    if (argv.length !== 1) {
-        return usage();
-    }
-    getPeers(argv[0], newPf, debug);
+    argv = argv.slice(1);
+    const args = Minimist(argv, { boolean: [ '2', 'v', 'verbose' ] });
+    const ctx = Object.freeze({
+        _2: args['2'],
+        debug: args.v || args.verbose,
+        pref: args.p || args.pref
+    });
+    if (args._.length !== 1) { return void usage(); }
+    getPeers(args._[0], ctx._2, ctx.debug);
 };
 
 if (!module.parent) {

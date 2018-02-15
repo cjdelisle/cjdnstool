@@ -220,6 +220,9 @@ const resolveFromPath = (ctx, dest, cb, opts) => {
 
 const resolve = (ctx, dest, cb, opts) => {
     const debug = mkDebug(opts);
+    const pref = (opts.preference || 'session,snode,pf').split(',').
+        map((x) => (x.toLowerCase())).
+        filter((x) => (['session', 'snode', 'pf'].indexOf(x) + 1));
     if (LABEL_REGEX.test(dest)) {
         return void resolveFromPath(ctx, dest, cb, opts);
     }
@@ -238,39 +241,44 @@ const resolve = (ctx, dest, cb, opts) => {
         }));
     }).nThen((waitFor) => {
         if (!ipv6) { return; }
-        debug('resolving ' + ipv6 + ' to path');
-        ctx.cjdns.SessionManager_sessionStatsByIP(ipv6, waitFor((err, res) => {
-            out.sess = { err: err, res: res };
-        }));
-        if (!opts.noDHT) {
+        debug('resolving ' + ipv6 + ' to path (SessionManager)');
+        if (pref.indexOf('session') > -1) {
+            ctx.cjdns.SessionManager_sessionStatsByIP(ipv6, waitFor((err, res) => {
+                out.sess = { err: err, res: res };
+            }));
+        }
+    }).nThen((waitFor) => {
+        if (!ipv6) { return; }
+        if (out.sess && !opts.all) { return; }
+        if (pref.indexOf('snode') > -1) {
+            if (ctx.snode) {
+                queryDHT(ctx, ctx.snode, {
+                    sq: 'gr',
+                    src: new Buffer(ctx.selfNode.ipv6.replace(/:/g, ''), 'hex'),
+                    tar: new Buffer(ipv6.replace(/:/g, ''), 'hex')
+                }, waitFor((err, res) => {
+                    out.snode = { err: err, res: res };
+                }));
+            } else {
+                debug('no snode');
+            }
+        }
+    }).nThen((waitFor) => {
+        if (!ipv6) { return; }
+        if ((out.sess || out.snode) && !opts.all) { return; }
+        if (pref.indexOf('pf') > -1) {
             ctx.cjdns.NodeStore_nodeForAddr(ipv6, waitFor((err, res) => {
                 out.dht = { err: err, res: res };
             }));
         }
-        if (ctx.snode) {
-            queryDHT(ctx, ctx.snode, {
-                sq: 'gr',
-                src: new Buffer(ctx.selfNode.ipv6.replace(/:/g, ''), 'hex'),
-                tar: new Buffer(ipv6.replace(/:/g, ''), 'hex')
-            }, waitFor((err, res) => {
-                out.snode = { err: err, res: res };
-            }));
-        } else {
-            console.log('no snode');
-        }
     }).nThen((waitFor) => {
         const answers = [];
-        if (out.snode && out.snode.res && out.snode.res.nodes.length) {
-            answers.push([ out.snode.res.nodes[0], 'SNODE']);
-        }
         if (out.sess && out.sess.res && out.sess.res.addr) {
-            const arr = [ out.sess.res.addr, 'SESS', out.sess.res.metric.toString(16)];
-            if (out.sess.res.metric < 0xfff00033) {
-                // Peers should appear at the top of the list
-                answers.unshift(arr);
-            } else {
-                answers.push(arr);
-            }
+            const arr = [ out.sess.res.addr, 'session', out.sess.res.metric.toString(16)];
+            answers.push(arr);
+        }
+        if (out.snode && out.snode.res && out.snode.res.nodes.length) {
+            answers.push([ out.snode.res.nodes[0], 'snode']);
         }
         if (out.dht && out.dht.res.result && out.dht.res.result.routeLabel &&
             out.dht.res.result.routeLabel !== 'ffff.ffff.ffff.ffff' &&
@@ -278,7 +286,13 @@ const resolve = (ctx, dest, cb, opts) => {
         {
             const dhtOut = 'v' + out.dht.res.result.protocolVersion + '.' +
                 out.dht.res.result.routeLabel + '.' + out.dht.res.result.key;
-            answers.push([ dhtOut, 'DHT']);
+            answers.push([ dhtOut, 'pf']);
+        }
+        if (opts.preference) {
+            answers.sort((x, y) => {
+                if (x[2] === y[2]) { return 0; }
+                return pref.indexOf(x[2]) > pref.indexOf(y[2]) ? 1 : -1;
+            });
         }
         if (answers.length === 0) {
             cb('NXDOMAIN', answers, out);

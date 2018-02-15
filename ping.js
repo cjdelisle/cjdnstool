@@ -7,18 +7,18 @@ var now = function () { return (new Date()).getTime(); };
 var nowSeconds = function () { return Math.floor(now() / 1000); };
 
 const usage = module.exports.usage = () => {
-    console.log("cjdnstool ping [OPTIONS] <target>");
+    console.log("cjdnstool ping [OPTIONS] <nodename|ipv6|hostname>");
     console.log("    -k, --keyping                 # send switch ping requesting the key");
     console.log("    -s, --switchping              # send switch ping (requires -k)");
     console.log("    -d <data>, --data=<data>      # send extra data in the ping message");
     console.log("    -c <num>, --count=<num>       # number of pings to send before stopping");
     console.log("    -v, --verbose                 # print debug information");
-    console.log("    -i <secs>, --waittime=<secs>  " +
-        "# number of seconds between messages (can be fractional)");
+    console.log("    -i <secs>, --waittime=<secs>  # number of seconds between messages");
+    console.log("    -p <pref>, --pref=<pref>      # use specified address resolution preference");
 };
 
 const dhtPing = (ctx, cb) => {
-    console.log('inter-router ping ' + ctx.mut.resolvedName[0]);
+    console.log('pathfinder ping ' + ctx.mut.resolvedName[0] + ' (resolved from [' + ctx.mut.resolvedName[1] + '])');
     const ping = (num, cb) => {
         const startTime = +new Date();
         ctx.mut.cjdnstools.queryDHT(ctx.mut.resolvedName[0], { q: 'pn' }, (err, ret) => {
@@ -45,7 +45,7 @@ const ctrlPing = (ctx, cb) => {
     const nn = Cjdnskeys.parseNodeName(ctx.mut.resolvedName[0]);
     const path = nn.path;
     const pingType = ctx.keyPing ? 'KEYPING' : 'PING';
-    console.log('ctrl ' + pingType + ' ' + path);
+    console.log('ctrl ' + pingType + ' ' + path + ' (resolved from [' + ctx.mut.resolvedName[1] + '])');
     const ping = (num, cb) => {
         const startTime = +new Date();
         ctx.mut.cjdnstools.queryCTRL(path, pingType, (err, ret) => {
@@ -74,13 +74,14 @@ const ctrlPing = (ctx, cb) => {
 };
 
 const main = module.exports.main = (argv) => {
-    const args = Minimist(argv, { boolean: [ 'k', 's', 'v' ] });
+    const args = Minimist(argv, { boolean: [ 'k', 's', 'v', 'verbose', 'switchping', 'keyping' ] });
     const ctx = Object.freeze({
         count: args.c || args.count || Infinity,
         keyPing: args.k || args.keyping,
         switchMode: args.s || args.switchping,
         data: args.d || args.data || '',
         debug: args.v || args.verbose,
+        pref: args.p || args.pref,
         waittime: args.i || args.waittime || 1,
         dest: args._[args._.length - 1],
         mut: {
@@ -107,7 +108,7 @@ const main = module.exports.main = (argv) => {
             if (err) { throw err; }
             if (ctx.debug) { console.log(ret); }
             ctx.mut.resolvedName = ret[0];
-        }), { debug: ctx.debug });
+        }), { debug: ctx.debug, preference: ctx.pref });
     }).nThen((waitFor) => {
         if (ctx.switchMode) {
             ctrlPing(ctx, waitFor());
