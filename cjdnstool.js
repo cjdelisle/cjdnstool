@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const APPS = {
     ping: require('./ping.js'),
     query: require('./query.js'),
