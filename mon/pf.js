@@ -9,8 +9,13 @@ import type { Cjdnsniff_BencMsg_t } from 'cjdnsniff'
 */
 
 const main = module.exports.main = (argv /*:Array<string>*/) => {
-    Cjdnsadmin.connectWithAdminInfo((cjdns) => {
-        Cjdnsniff.sniffTraffic(cjdns, 'CJDHT', (err, ev) => {
+    Cjdnsadmin.connect((err, c) => {
+        if (err) {
+            console.error(err.message);
+            return;
+        }
+        /*::if (!c) { throw new Error(); }*/
+        Cjdnsniff.sniffTraffic(c, 'CJDHT', (err, ev) => {
             if (!ev) { throw err; }
             ev.on('error', (e) => { console.error(e); });
             ev.on('message', (msg) => {

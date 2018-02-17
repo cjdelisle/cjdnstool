@@ -11,8 +11,13 @@ import type { Cjdnsctrl_Ping_t, Cjdnsctrl_ErrMsg_t } from 'cjdnsctrl'
 */
 
 const main = module.exports.main = (argv /*:Array<string>*/) => {
-    Cjdnsadmin.connectWithAdminInfo((cjdns) => {
-        Cjdnsniff.sniffTraffic(cjdns, 'CTRL', (err, ev) => {
+    Cjdnsadmin.connect((err, c) => {
+        if (err) {
+            console.error(err.message);
+            return;
+        }
+        /*::if (!c) { throw new Error(); }*/
+        Cjdnsniff.sniffTraffic(c, 'CTRL', (err, ev) => {
             if (!ev) { throw err; }
             ev.on('error', (e) => { console.error(e); });
             ev.on('message', (msg) => {

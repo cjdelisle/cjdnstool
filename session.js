@@ -43,7 +43,14 @@ const main = module.exports.main = (argv) => {
     const handles = [];
     const sessions = [];
     nThen(function (waitFor) {
-        Cjdns.connectWithAdminInfo(waitFor(function (c) { cjdns = c; }));
+        Cjdns.connect(waitFor((err, c) => {
+            if (err) {
+                console.error(err.message);
+                waitFor.abort();
+            }
+            /*::if (!c) { throw new Error(); }*/
+            cjdns = c;
+        }));
     }).nThen(function (waitFor) {
         var more = function (i) {
             cjdns.SessionManager_getHandles(i, waitFor(function (err, ret) {

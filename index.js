@@ -347,7 +347,13 @@ module.exports.create = (cb) => {
         ctrlMessages: {}
     };
     nThen((waitFor) => {
-        Cjdnsadmin.connectWithAdminInfo(waitFor((c) => { ctx.cjdns = c; }));
+        Cjdnsadmin.connect(waitFor((err, c) => {
+            if (err) {
+                console.error(err.message);
+                waitFor.abort();
+            }
+            ctx.cjdns = c;
+        }));
     }).nThen((waitFor) => {
         ctx.cjdns.Core_nodeInfo(waitFor((err, ni) => {
             if (err) { throw err; }

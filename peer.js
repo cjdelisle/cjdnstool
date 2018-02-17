@@ -15,7 +15,11 @@ const main = module.exports.main = (argv) => {
         }
         return a;
     };
-    Cjdns.connectAsAnon(function (cjdns) {
+    Cjdns.connect((err, cjdns) => {
+        if (err) {
+            console.error(err.message);
+            return;
+        }
         var again = function (i) {
             cjdns.InterfaceController_peerStats(i, function (err, ret) {
                 if (err) { throw err; }
