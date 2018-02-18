@@ -6,7 +6,9 @@ const APPS = {
     session: require('./session.js'),
     util: require('./util/index.js'),
     mon: require('./mon/index.js'),
-    resolve: require('./resolve.js')
+    resolve: require('./resolve.js'),
+    cexec: require('./cexec.js'),
+    log: require('./log.js')
 };
 
 const usage = () => {

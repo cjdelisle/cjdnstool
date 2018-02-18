@@ -252,3 +252,97 @@ Resolving irc.fc00.io
 session v20.0000.0000.0007.cd45.fdud7rqg7puz4hf6u4kztfku0pbujw88l29s4ugwhf61vgqv6cj0.k metric=fff00033
 $
 ```
+
+### cjdnstool cexec
+
+Execute a direct RPC call to the cjdns engine. Everything in cjdnstool uses these RPCs
+to access data from and to control cjdns but this is a raw access to the cjdns RPC calls.
+There are many calls which are documented to varying extents. The names of the calls
+always begin with the name of the .c file where they are defined so even if the call is
+not well documented, finding the source code is reasonable.
+
+The best documentation to be found on these RPC calls is here:
+https://github.com/cjdelisle/cjdns/blob/master/doc/admin-api.md#cjdns-functions
+
+In general it's better to use the tools provided in cjdnstool but if you want to access
+something internal, these RPCs are the best option.
+
+#### Options
+
+Each RPC call has different options which are shown when you execute `cjdnstool cexec`
+with no arguments. All options must be in the form `--<name>=<value>` and if the option
+is shown in square brackets, it is optional.
+
+#### Example
+
+```
+$ cjdnstool cexec ReachabilityCollector_getPeerInfo --page=0
+{
+  "error": "none",
+  "peers": [
+    {
+      "addr": "v20.0000.0000.0000.0015.kw0vfw3tmb6u6p21z5jmmymdlumwknlg3x8muk5mcw66tdpqlw30.k",
+      "pathThemToUs": "0000.0000.0000.04cc",
+      "querying": 0
+    },
+    {
+      "addr": "v20.0000.0000.0000.0013.cmnkylz1dx8mx3bdxku80yw20gqmg0s9nsrusdv0psnxnfhqfmu0.k",
+      "pathThemToUs": "0000.0000.0000.00b6",
+      "querying": 0
+    }
+  ]
+}
+$
+```
+
+### cjdnstool log
+
+Cjdns DEBUG level logging is more like a sort of tracepoint or kprobe, when you enable logging
+it prints a fantastic amount of noise. Fortunartely for performance, the logs are not even
+created inside of cjdns unless logging is enabled. You can enable logging on a verbosity,
+per-file and per-line basis.
+
+For example `cjdnstool log -f CryptoAuth.c` will take all logs from CryptoAuth file.
+`cjdnstool log -v INFO` will collect logs at INFO level or higher.
+`cjdnstool log -f CryptoAuth.c -l 727` will collect logs only from one line in the CryptoAuth
+file (assuming there is a log line there).
+
+If you call `cjdnstool log` with no arguments, it will simply print all logs.
+
+#### Options
+
+Each option can be specified only once, but options can be used together.
+
+* `-v <verb>`, `--verbosity=<verb>`: Specify the level of verbosity for logging, each level
+implies the higher levels so if you specify INFO, it will log INFO, WARN and CRITICAL levels.
+* `-f <file>`, `--file=<file>`: Limit logging to one file, this helps when you only want to
+see what's going on inside of one particular module.
+* `-l <line>`, `--line=<line>`: Limit logging to one specific line number, this is
+most useful in conjunction with `--file` to only listen to invocations of one particular log
+line.
+
+#### Example
+
+```
+$ cjdnstool log
+1483311804 DEBUG SessionManager.c:380 ver[17] send[18269] recv[379733] ip[fcc7:91f7:ab6f:85b7:5bfc:790a:31c8:dd38] path[0000.0000.0037.91c5] new session nonce[3]
+1483311804 DEBUG CryptoAuth.c:628 0x7ff313e860b8 inner [fcc7:91f7:ab6f:85b7:5bfc:790a:31c8:dd38] state[0]: Received a repeat key packet
+1483311804 DEBUG CryptoAuth.c:631 0x7ff313e860b8 inner [fcc7:91f7:ab6f:85b7:5bfc:790a:31c8:dd38] state[0]: DROP a stray key packet
+1483311804 DEBUG SessionManager.c:391 ver[17] send[18269] recv[379733] ip[fcc7:91f7:ab6f:85b7:5bfc:790a:31c8:dd38] path[0000.0000.0037.91c5] DROP Failed decrypting message NoH[3] state[INIT]
+1483311804 DEBUG SessionManager.c:380 ver[17] send[18269] recv[379733] ip[fcc7:91f7:ab6f:85b7:5bfc:790a:31c8:dd38] path[0000.0000.0037.91c5] new session nonce[3]
+1483311804 DEBUG CryptoAuth.c:628 0x7ff313e860b8 inner [fcc7:91f7:ab6f:85b7:5bfc:790a:31c8:dd38] state[0]: Received a repeat key packet
+^CDisconnecting...
+done
+$ cjdnstool log -v INFO
+1483311840 INFO SwitchCore.c:194 no such iface
+1483311841 INFO ControlHandler.c:224 DROP ctrl packet from [0000.000d.a193.4585] with invalid checksum
+1483311842 INFO SwitchCore.c:194 no such iface
+^CDisconnecting...
+done
+$ node cjdnstool log -f ControlHandler.c -l 224
+1483311886 INFO ControlHandler.c:224 DROP ctrl packet from [0000.5750.a6c4.23a3] with invalid checksum
+^CDisconnecting...
+done
+$
+```
+
