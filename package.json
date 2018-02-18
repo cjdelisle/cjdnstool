@@ -4,7 +4,9 @@
   "description": "Diagnostic tools for cjdns",
   "main": "index.js",
   "scripts": {
-    "test": "node ./cjdnstool.js"
+    "test": "node ./cjdnstool.js",
+    "flow": "./node_modules/.bin/flow",
+    "lint": "jshint --verbose --config .jshintrc --exclude-path .jshintignore ."
   },
   "author": "Caleb James DeLisle",
   "license": "GPL-3.0+",
@@ -19,5 +21,9 @@
   },
   "bin": {
     "cjdnstool": "./cjdnstool.js"
+  },
+  "devDependencies": {
+    "flow-bin": "^0.66.0",
+    "jshint": "^2.9.5"
   }
 }

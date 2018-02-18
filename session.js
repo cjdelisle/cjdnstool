@@ -26,7 +26,7 @@ const usage = module.exports.usage = () => {
 
 const printSession = function (session) {
     let state = session.state.replace(/CryptoAuth_/,'');
-    while (state.length < ('ESTABLISHED').length) { state = state + ' ' }
+    while (state.length < ('ESTABLISHED').length) { state = state + ' '; }
     let addr = session.addr;
     if (process.argv.indexOf('--ip6') !== -1) {
         addr = addr.replace(/[a-z0-9]{52}.k/, key2Ip6.convert);
