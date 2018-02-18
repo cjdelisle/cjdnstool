@@ -47,6 +47,24 @@ cjdnstool mon COMMAND
 cjdnstool resolve OPTIONS <hostname|ipv6>
     -v, --verbose                 # print debug information
     -p <pref>, --pref=<pref>      # use specified address resolution preference
+
+cjdnstool cexec [COMMAND ARGS...]
+                                  # run `cjdnstool cexec` for all commands
+                                  # below are a couple of examples
+    Allocator_bytesAllocated      # Determine how many bytes are allocated
+    Core_pid                      # Get the cjdns core pid number
+    ReachabilityCollector_getPeerInfo
+        --page=<Int>              # Get information about your peers (paginated)
+    SupernodeHunter_status        # Get a status report from the snode hunter
+    see: https://github.com/cjdelisle/cjdns/blob/crashey/doc/admin-api.md#funcs
+
+cjdnstool log [OPTIONS]
+    -v <verb>, --verbosity=<verb> # specify the verbosity level of logging
+                                  # one of DEBUG, INFO, WARN, ERROR, CRITICAL
+                                  # each level implies the levels above it
+                                  # INFO will include WARN, ERROR and CRITICAL
+    -f <file>, --file=<file>      # limit logging to one file
+    -l <line>, --line=<line>      # limit logging to a specific line number
 ```
 
 ### cjdnstool ping
