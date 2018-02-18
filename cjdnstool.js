@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+'use strict';
 const APPS = {
     ping: require('./ping.js'),
     query: require('./query.js'),

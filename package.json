@@ -17,7 +17,8 @@
     "cjdnskeys": "^0.1.5",
     "cjdnsniff": "^0.2.9",
     "cjdnsplice": "^0.2.1",
-    "minimist": "^1.2.0"
+    "minimist": "^1.2.0",
+    "nthen": "^0.1.7"
   },
   "bin": {
     "cjdnstool": "./cjdnstool.js"

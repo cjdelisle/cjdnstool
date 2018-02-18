@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+'use strict';
 const key2Ip6 = require('./util/key2ip6.js');
 const Cjdns = require('cjdnsadmin');
 const nThen = require('nthen');

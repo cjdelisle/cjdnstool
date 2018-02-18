@@ -1,3 +1,4 @@
+'use strict';
 var Cjdns = require('cjdnsadmin');
 var Key2Ip6 = require('./util/key2ip6.js');
 

@@ -1,4 +1,5 @@
 /* @flow */
+'use strict';
 const Cjdnskeys = require('cjdnskeys');
 const Cjdnstools = require('./index.js');
 const Cjdnsadmin = require('cjdnsadmin');
