@@ -39,6 +39,8 @@ cjdnstool session [COMMAND]
 
 cjdnstool util COMMAND
     key2ip6 <pubkey>[ <pubkey>][ <pubkey>][...]
+    priv2pub <privkey>[ <privkey>][ <privkey>][...]
+    keygen
 
 cjdnstool mon COMMAND
     pf                            # monitor pathfinder traffic
@@ -65,6 +67,17 @@ cjdnstool log [OPTIONS]
                                   # INFO will include WARN, ERROR and CRITICAL
     -f <file>, --file=<file>      # limit logging to one file
     -l <line>, --line=<line>      # limit logging to a specific line number
+
+cjdnstool snode COMMAND
+    show (default command)        # display the currently used supernode, if any
+    ls                            # list all configured snodes
+
+cjdnstool passwd COMMAND
+    show (default command)        # show names of configured peering passwords
+
+cjdnstool iptun COMMAND
+    show (default command)        # show all incoming and outgoing
+                                  # iptun connections
 ```
 
 ### cjdnstool ping
@@ -187,17 +200,46 @@ This is equivilent to `./tools/sessionStats`
 
 * `-6`, `--ip6`: Print sessions with their cjdns IPv6 rather than their pubkeys
 
-### cjdnstool util key2ip6
+### cjdnstool util
+
+These are utility functions which do not require the cjdns node to be running in order
+to use them.
+
+#### cjdnstool util key2ip6
 
 Convert one or more cjdns public keys into cjdns IPv6 addresses. This command has no options.
 
-#### Example
+##### Example
 
 ```
 $ cjdnstool util key2ip6 kw0vfw3tmb6u6p21z5jmmymdlumwknlg3x8muk5mcw66tdpqlw30.k cmnkylz1dx8mx3bdxku80yw20gqmg0s9nsrusdv0psnxnfhqfmu0.k
 kw0vfw3tmb6u6p21z5jmmymdlumwknlg3x8muk5mcw66tdpqlw30.k fc02:2735:e595:bb70:8ffc:5293:8af8:c4b7
 cmnkylz1dx8mx3bdxku80yw20gqmg0s9nsrusdv0psnxnfhqfmu0.k fcbb:5056:899e:2838:f1ad:12eb:9704:1ff1
 $
+```
+
+#### cjdnstool util priv2pub
+
+Convert one or more cjdns private keys (in hexidecimal format) into public keys in base64.
+
+##### Example
+
+```
+$ cjdnstool util priv2pub 28ee6a11ab624cf8750e255e347909bb35f10291b972b6fb261a534798049d66
+vn2hwbvnvyky9wcgrlwyl4vnqn63z73bvqky1hslt3n4ur0mnpv0.k
+$
+```
+
+#### cjdnstool util keygen
+
+Generate a new cjdns keypair, outputs a private key in hex, a public key in base64 and an
+IPv6 address. This command takes no arguments.
+
+##### Example
+
+```
+$ cjdnstool util keygen
+28ee6a11ab624cf8750e255e347909bb35f10291b972b6fb261a534798049d66 vn2hwbvnvyky9wcgrlwyl4vnqn63z73bvqky1hslt3n4ur0mnpv0.k fc83:54f8:7f02:75c0:e2ac:d575:4b4d:eb28
 ```
 
 ### cjdnstool mon pf
@@ -364,3 +406,88 @@ done
 $
 ```
 
+### cjdnstool snode
+
+Cjdns uses a supernode to aid in finding routes to things, you can configure which supernode
+to use or you can allow it to use the supernode used by your peers. If the supernode comes
+from one of your peers, it will try to select supernodes used by the lower peers in the list
+(outgoing peers which you have ostensibly configured in your cjdroute.conf file).
+
+#### cjdnstool snode show
+
+Show the currently used supernode, this command takes no options. The result shows whether
+the supernode is "authorized" meaning whether it was manually configured or was automatically
+detected.
+
+##### Example
+
+```
+$ cjdnstool snode show
+v20.0000.0000.0004.f2a3.9syly12vuwr1jh5qpktmjc817y38bc9ytsvs8d5qwcnvn6c2lwq0.k authorized=false
+$
+```
+
+#### cjdnstool snode ls
+
+List configured supernodes, this command takes no options. The result will be the list of
+all public keys of the supernodes which have been configured in the cjdroute.conf file.
+
+##### Example
+
+```
+$ cjdnstool snode ls
+9syly12vuwr1jh5qpktmjc817y38bc9ytsvs8d5qwcnvn6c2lwq0.k
+$
+```
+
+### cjdnstool passwd
+
+This submodule is for managing the authorized passwords which allow peering. Each password
+has a "login" name associated and that name is needed for the other side to authenticate.
+
+If no command is given, the default is `cjdnstool passwd show`.
+
+#### cjdnstool passwd show
+
+Show the list of configured passwords which other nodes can use for connecting. This will
+show the username to login but not the actual password itself. This command takes no options.
+
+##### Example
+
+```
+$ cjdnstool passwd show
+Anon #1
+Local Peers
+$
+```
+
+### cjdnstool iptun
+
+This is for configuring the IPTunnel submodule which is used for issuing IPv4 and IPv6
+addresses to a cjdns node and converting it to a VPN client. The format of an address
+is `1.2.3.4/5:6` or `1234::/5:6` the 5:6 is to be interpreted as:
+
+address SLASH prefix_announced_to_client COLON size_of_address_block_issued_to_client
+
+For example: 192.168.123.0/0:24 will be issuing the address block 192.168.123.0/24 to
+the client and then announcing /0 (whole internet) to the client.
+
+For a smaller network (business VPN for example), you might use 10.118.12.3/16:32 issuing
+a /32 (1 address) to the client but announcing to the a /16, the whole company network.
+
+#### cjdnstool iptun show
+
+This shows the list of all configured IPTunnel connections (servers for which you are
+the client and clients for which you are the server). It takes no arguments.
+
+##### Example
+
+```
+$ cjdnstool iptun show
+SERVER cmnkylz1dx8mx3bdxku80yw20gqmg0s9nsrusdv0psnxnfhqfmu0.k 10.66.6.1/0:32 2c0f:f930:2:1::/0:64
+```
+
+This is showing a SERVER (for which we are the client), and that server has issued us
+10.66.6.1/0:32 (allocating us 1 address, but instructing us to route the whole internet there)
+and 2c0f:f930:2:1::/0:64 (allocating us a /64 block of IPv6 and instructing us to route
+the whole internet there).

@@ -9,7 +9,10 @@ const APPS = {
     mon: require('./mon/index.js'),
     resolve: require('./resolve.js'),
     cexec: require('./cexec.js'),
-    log: require('./log.js')
+    log: require('./log.js'),
+    snode: require('./snode/index.js'),
+    passwd: require('./passwd/index.js'),
+    iptun: require('./iptun/index.js')
 };
 
 const usage = () => {

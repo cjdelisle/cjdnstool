@@ -1,6 +1,6 @@
 {
   "name": "cjdnstool",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Diagnostic tools for cjdns",
   "main": "index.js",
   "scripts": {
@@ -18,8 +18,10 @@
     "cjdnsniff": "^0.2.9",
     "cjdnsplice": "^0.2.1",
     "minimist": "^1.2.0",
-    "nthen": "^0.1.7"
+    "nthen": "^0.1.7",
+    "tweetnacl": "~0.14.3"
   },
+  "repository": "https://github.com/cjdelisle/cjdnstool",
   "bin": {
     "cjdnstool": "./cjdnstool.js"
   },

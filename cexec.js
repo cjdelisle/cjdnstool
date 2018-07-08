@@ -51,7 +51,9 @@ const main = module.exports.main = (argv /*:Array<string>*/) => {
         const defs = functionDescriptions(cjdns);
         if (!argv.length) {
             console.log("see: " + FUNCTION_DOCS);
-            Object.keys(defs).forEach((k) => {
+            const keys = Object.keys(defs);
+            keys.sort();
+            keys.forEach((k) => {
                 console.log(defs[k]);
             });
         } else {
