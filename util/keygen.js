@@ -1,4 +1,5 @@
 /*@flow*/
+'use strict';
 const Crypto = require('crypto');
 const Nacl = require('tweetnacl');
 const Priv2pub = require('./priv2pub.js');

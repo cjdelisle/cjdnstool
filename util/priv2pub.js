@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-const Crypto = require('crypto');
+'use strict';
 const Nacl = require('tweetnacl');
 
 // see: util/Base32.h
