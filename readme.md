@@ -491,3 +491,27 @@ This is showing a SERVER (for which we are the client), and that server has issu
 10.66.6.1/0:32 (allocating us 1 address, but instructing us to route the whole internet there)
 and 2c0f:f930:2:1::/0:64 (allocating us a /64 block of IPv6 and instructing us to route
 the whole internet there).
+
+### cjdnstool iface
+
+Cjdns connects to peers via pluggable interfaces, there are the UDPInterface and the
+ETHInterface classes of interfaces but other interfaces can easily be developed. Of
+these classes, there may be multiple actual interfaces which corrispond to (for example)
+the UDP/IPv4 stack vs. the UDP/IPv6 stack, or ETHInterface instances connected to
+different ethernet devices.
+
+#### cjdnstool iface show
+
+This shows a list of all the configured interfaces, this command takes no arguments and
+it is the default command, so typing `cjdnstool iface` will do the same thing.
+
+##### Example
+
+This shows 2 UDPInterface instances, 1 configured for IPv4 and 1 configured for IPv6.
+
+```
+$ cjdnstool iface show
+1 	UDP/v6/[::]:51056	beaconState=DISABLED
+0 	UDP/v4/0.0.0.0:51056	beaconState=SENDING
+$
+```
