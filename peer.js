@@ -25,7 +25,7 @@ const main = module.exports.main = (argv) => {
             cjdns.InterfaceController_peerStats(i, function (err, ret) {
                 if (err) { throw err; }
                 ret.peers.forEach(function (peer) {
-                    let p = addr(peer['addr']) + ' ' + peer['state'] +
+                    let p = peer['lladdr'] + '\t' + addr(peer['addr']) + ' ' + peer['state'] +
                         ' in ' + peer['recvKbps'] + 'kb/s' +
                         ' out ' + peer['sendKbps'] + 'kb/s';
 
