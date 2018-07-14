@@ -503,7 +503,9 @@ different ethernet devices.
 #### cjdnstool iface show
 
 This shows a list of all the configured interfaces, this command takes no arguments and
-it is the default command, so typing `cjdnstool iface` will do the same thing.
+it is the default command, so typing `cjdnstool iface` will do the same thing. The output
+is the interface number (needed when configuring new peers), the name of the interface,
+and the beaconing state (whether it is sending beacon messages to search for new peers).
 
 ##### Example
 
@@ -511,7 +513,7 @@ This shows 2 UDPInterface instances, 1 configured for IPv4 and 1 configured for 
 
 ```
 $ cjdnstool iface show
-1 	UDP/v6/[::]:51056	beaconState=DISABLED
-0 	UDP/v4/0.0.0.0:51056	beaconState=SENDING
+1 	UDP/IPv6/[::]:51056	beaconState=DISABLED
+0 	UDP/IPv4/0.0.0.0:51056	beaconState=SENDING
 $
 ```
