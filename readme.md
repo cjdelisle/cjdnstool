@@ -11,7 +11,7 @@ npm install -g cjdnstool
 
 ## Use
 
-```bash
+```
 $ cjdnstool
 Usage: cjdnstool COMMAND OPTIONS
 cjdnstool ping [OPTIONS] <nodename|ipv6|hostname>
@@ -24,7 +24,7 @@ cjdnstool ping [OPTIONS] <nodename|ipv6|hostname>
     -p <pref>, --pref=<pref>      # use specified address resolution preference
 
 cjdnstool query COMMAND
-    getpeers [-2][-v] <nodename|ipv6|hostname>
+    getpeers [OPTIONS] <nodename|ipv6|hostname>
         -2                        # request from the subnode pathfinder
         -v, --verbose             # print debug information
         -p <pref>, --pref=<pref>  # use specified address resolution preference
@@ -79,9 +79,14 @@ cjdnstool passwd COMMAND
 cjdnstool iptun COMMAND
     show (default command)        # show all incoming and outgoing
                                   # iptun connections
+
 cjdnstool iface COMMAND
     show (default command)        # show all configured interfaces
 
+cjdnstool traceroute [OPTIONS] <nodename|ipv6|hostname>
+    -2                            # request from the subnode pathfinder
+    -v, --verbose                 # print debug information
+    -p <pref>, --pref=<pref>      # use specified address resolution preference
 ```
 
 ### cjdnstool ping
@@ -555,4 +560,34 @@ $ cjdnstool iface show
 1 	UDP/IPv6/[::]:51056	beaconState=DISABLED
 0 	UDP/IPv4/0.0.0.0:51056	beaconState=SENDING
 $
+```
+
+### cjdnstool traceroute
+
+Give the list of nodes between your node and the target of the traceroute. The target
+can be given in any way that is accepted by `cjdnstool resolve`. There are 3 options
+to this command.
+
+* `-2` Use the subnode pathfinder for resolving the getPeers requests which are needed
+to perform the traceroute. Because in certain versions, the subnode pathfinder's getPeers
+handler had a bug (present in 20.0 and 20.1, fixed in 20.2), this is disabled by default,
+but it can be effective for detecting the nodes which are running the problematic version.
+* `-v`, `--verbose` Print extra debug information.
+* `-p <pref>`, `--pref=<pref>` Use this method of resolving the path, see
+[cjdnstool resolve](https://github.com/cjdelisle/cjdnstool#cjdnstool-resolve) for more
+information.
+
+The way this traceroute works is by performing getPeers requests in sequence to your own
+node and then to each node along the path, following the node which is in the path to the
+final destination.
+
+#### Example
+
+```
+$ cjdnstool traceroute fcfc:5d70:99b6:4e0c:cba6:61ec:434b:df1a
+traceroute v17.0000.0000.0005.d3a3.h4quw20xhnz4m40l5td9h6qhug86yghs83w54qd0v7fzywdsh700.k (getPeers) (resolved from [session])
+v20.0000.0000.0000.0001.3fdqgz2vtqb0wx02hhvx3wjmjqktyt567fcuvj3m72vw5u6ubu70.k 3ms
+v20.0000.0000.0000.0013.cmnkylz1dx8mx3bdxku80yw20gqmg0s9nsrusdv0psnxnfhqfmu0.k 32ms
+v20.0000.0000.0000.0ba3.cnm1119sxujn7judmpnj100j8mmvxgyrqb250ldx61p3rh6d0dc0.k 51ms
+v17.0000.0000.0005.d3a3.h4quw20xhnz4m40l5td9h6qhug86yghs83w54qd0v7fzywdsh700.k 59ms
 ```

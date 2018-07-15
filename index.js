@@ -391,6 +391,7 @@ module.exports.create = (cb) => {
 
         checkSnode(ctx, () => {
             cb({
+                cjdns: ctx.cjdns,
                 queryDHT: (dest, msg, cb, opts) => {
                     queryDHT(ctx, dest, msg, cb, opts);
                 },

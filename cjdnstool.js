@@ -13,7 +13,8 @@ const APPS = {
     snode: require('./snode/index.js'),
     passwd: require('./passwd/index.js'),
     iptun: require('./iptun/index.js'),
-    iface: require('./iface/index.js')
+    iface: require('./iface/index.js'),
+    traceroute: require('./traceroute.js')
 };
 
 const usage = () => {

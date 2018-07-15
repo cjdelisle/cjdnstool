@@ -56,7 +56,7 @@ const getPeers = (dest, newPf, debug) => {
 
 const usage = module.exports.usage = () => {
     console.log("cjdnstool query COMMAND");
-    console.log("    getpeers [-2][-v] <nodename|ipv6|hostname>");
+    console.log("    getpeers [OPTIONS] <nodename|ipv6|hostname>");
     console.log("        -2                        # request from the subnode pathfinder");
     console.log("        -v, --verbose             # print debug information");
     console.log("        -p <pref>, --pref=<pref>  # use specified address resolution preference");
