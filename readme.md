@@ -45,6 +45,7 @@ cjdnstool util COMMAND
 cjdnstool mon COMMAND
     pf                            # monitor pathfinder traffic
     ctrl                          # monitor switch control traffic
+    snode                         # monitor traffic to/from the snode
 
 cjdnstool resolve OPTIONS <hostname|ipv6>
     -v, --verbose                 # print debug information
@@ -78,6 +79,9 @@ cjdnstool passwd COMMAND
 cjdnstool iptun COMMAND
     show (default command)        # show all incoming and outgoing
                                   # iptun connections
+cjdnstool iface COMMAND
+    show (default command)        # show all configured interfaces
+
 ```
 
 ### cjdnstool ping
@@ -251,7 +255,7 @@ it points right then the message is incoming. This command has no options.
 #### Example
 
 ```
-$ node ./cjdnstool.js mon pf
+$ cjdnstool mon pf
 > v17 0000.0000.000a.e553 fcfd:9511:69cc:a05e:4eb2:ed20:c6a0:52e3 fn fcdb:4cd0:d748:0b1f:4eaf:5c9e:8cd9:b815
 < v17 0000.0000.000a.e553 fcfd:9511:69cc:a05e:4eb2:ed20:c6a0:52e3 reply
 > v17 0000.0000.000a.e553 fcfd:9511:69cc:a05e:4eb2:ed20:c6a0:52e3 fn fcdb:4cd0:d748:0b1f:4eaf:5c9e:8cd9:b815
@@ -269,10 +273,45 @@ message and if it points right then it's an incoming message. This command has n
 #### Example
 
 ```
-$ node ./cjdnstool.js mon ctrl
+$ cjdnstool mon ctrl
 Listening for CTRL traffic on node
 > 0000.0000.0006.f7a5 ERROR AUTHENTICATION label_at_err_node: 64e9.4c00.0000.0000 nonce: 1 00d596edf689e7fe14de00000000000b00000000
 > 0000.0000.0006.4dc5 ERROR AUTHENTICATION label_at_err_node: cc12.2000.0000.0000 nonce: 1 00866a1edb69ced59e0800000000000b00000000
+^C
+$
+```
+
+### cjdnstool mon snode
+
+Monitor traffic to and from the supernode. This will print all of the messages going to and from
+the snode which are either CTRL messages or are DHT messages *that are snode queries and replies*,
+normal interactions with the cjdns engine running on the snode will not be printed. It takes no
+arguments.
+
+Types of messages sent to and from the snode:
+
+* getRoute request: request for a path between two nodes in the network, given as IPv6.
+* getRoute reply: response is a node list (of one) which contains the version and key of the
+destination as well as a route which should work for the source, to get to that destination.
+* ann: signed announcement of reachability, see [Cjdnsann](https://github.com/cjdelisle/cjdnsann.git).
+* ann reply: reply from the snode, contains `stateHash` which is compared with the node's local
+state in order to ensure that they are aligned.
+
+#### Example
+
+```
+$ cjdnstool mon snode
+< getRoute fc92:8136:dc1f:e6e0:4ef6:a6dd:7187:b85f fcec:ae97:8902:d810:6c92:ec67:efb2:3ec5
+< getRoute fc92:8136:dc1f:e6e0:4ef6:a6dd:7187:b85f fc8b:7aa7:e2bf:c82b:4fa3:57a4:de2a:52a3
+< getRoute fc92:8136:dc1f:e6e0:4ef6:a6dd:7187:b85f fc8b:7aa7:e2bf:c82b:4fa3:57a4:de2a:52a3
+< getRoute fc92:8136:dc1f:e6e0:4ef6:a6dd:7187:b85f fcde:5b9e:fe85:5af7:5368:6dff:729d:f859
+< getRoute fc92:8136:dc1f:e6e0:4ef6:a6dd:7187:b85f fcde:5b9e:fe85:5af7:5368:6dff:729d:f859
+> reply [
+    "v20.0000.0000.1b2c.1405.fdyb6wrbnvr8qfr7uds81f8dxfgl7xj2shumtwx9szkpkz8j01y0.k"
+]
+> reply [
+    "v20.0000.0000.1b2c.1405.fdyb6wrbnvr8qfr7uds81f8dxfgl7xj2shumtwx9szkpkz8j01y0.k"
+]
 ^C
 $
 ```

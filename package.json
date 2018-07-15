@@ -11,7 +11,9 @@
   "author": "Caleb James DeLisle",
   "license": "GPL-3.0+",
   "dependencies": {
+    "cjdnsaddr": "^1.0.0",
     "cjdnsadmin": "^1.0.2",
+    "cjdnsann": "^0.1.4",
     "cjdnsctrl": "0.0.6",
     "cjdnsencode": "0.0.3",
     "cjdnskeys": "^0.1.5",

@@ -278,7 +278,7 @@ const resolve = (ctx, dest, cb, opts) => {
             const arr = [ out.sess.res.addr, 'session', out.sess.res.metric.toString(16)];
             answers.push(arr);
         }
-        if (out.snode && out.snode.res && out.snode.res.nodes.length) {
+        if (out.snode && out.snode.res && out.snode.res.nodes && out.snode.res.nodes.length) {
             answers.push([ out.snode.res.nodes[0], 'snode']);
         }
         if (out.dht && out.dht.res.result && out.dht.res.result.routeLabel &&
