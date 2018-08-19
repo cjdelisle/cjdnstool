@@ -1,6 +1,8 @@
 # Cjdnstool
 
-Diagnostic tools for cjdns
+[![Build Status](https://travis-ci.org/cjdelisle/cjdnstool.svg?branch=master)](https://travis-ci.org/cjdelisle/cjdnstool)
+
+Diagnostic and management tools for cjdns
 
 ## Install
 (you might also want to install [cjdns](https://github.com/cjdelisle/cjdns.git))

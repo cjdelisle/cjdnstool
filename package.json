@@ -1,6 +1,6 @@
 {
   "name": "cjdnstool",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Diagnostic tools for cjdns",
   "main": "index.js",
   "scripts": {
@@ -32,5 +32,8 @@
   "devDependencies": {
     "flow-bin": "^0.66.0",
     "jshint": "^2.9.5"
+  },
+  "engines": {
+    "node": ">=6.0.0"
   }
 }
