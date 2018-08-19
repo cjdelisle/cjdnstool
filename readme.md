@@ -87,6 +87,17 @@ cjdnstool traceroute [OPTIONS] <nodename|ipv6|hostname>
     -2                            # request from the subnode pathfinder
     -v, --verbose                 # print debug information
     -p <pref>, --pref=<pref>      # use specified address resolution preference
+
+cjdnstool conf [-f <f>] [--file=<f>] COMMAND
+    -f <f>, --file=<f>            # use file <f>, default: /etc/cjdroute.conf
+    migrate [-y]                  # convert v1 config format to v2
+        -y                        # answer yes to all questions
+        -d, --dryrun              # dry-run, print a unified diff of what
+                                  # WOULD be changed
+    put [OPTIONS] <path> <val>    # add/update an entry in a v2 config
+        -d, --dryrun              # dry-run, print a unified diff of what
+                                  # WOULD be changed
+    get <path>                    # retreive an entry in a v1 or v2 config
 ```
 
 ### cjdnstool ping
@@ -590,4 +601,203 @@ v20.0000.0000.0000.0001.3fdqgz2vtqb0wx02hhvx3wjmjqktyt567fcuvj3m72vw5u6ubu70.k 3
 v20.0000.0000.0000.0013.cmnkylz1dx8mx3bdxku80yw20gqmg0s9nsrusdv0psnxnfhqfmu0.k 32ms
 v20.0000.0000.0000.0ba3.cnm1119sxujn7judmpnj100j8mmvxgyrqb250ldx61p3rh6d0dc0.k 51ms
 v17.0000.0000.0005.d3a3.h4quw20xhnz4m40l5td9h6qhug86yghs83w54qd0v7fzywdsh700.k 59ms
+```
+
+### cjdnstool conf
+
+These commands are for manipulating the cjdns config file format. That format is JSON with
+C and C++ style comments but without floating points numbers, null, nor the boolean type.
+Before any sub-command, you can specify `-f <filename>` or `--file=<filename>` in order to
+provide a particular path to the cjdns conf file, otherwise it will default to using
+`/etc/cjdroute.conf`.
+
+#### cjdnstool conf migrate
+
+Before you can make changes to a cjdns conf file, it must be migrated to version 2.
+Historically, cjdns was known for accepting conf files with errors such as missing
+commas or even arbitrary text in certain places. Version 2 forbids such things
+but files which do not specify `version: 2` will be treated by cjdns as version 1
+in order to avoid surprise no-start on upgrade. `cjdnstool conf migrate` will make
+parse and then re-serialize your conf file (preserving comments!) and it will then
+add `version: 2` flag to the end of the conf file in order to indicate to cjdns that
+it should from now on be parsed in strict mode. Your old conf file will be preserved
+as `<name of your conf file>.old`.
+
+Options to `cjdnstool conf migrate` are as follows:
+* `-y` Treat the answer as yes, you will not be prompted - use with caution.
+* `-d`, `--dryrun` Do not actually edit the conf file, just print a *unified diff*
+patch showing what would be changed and then exit.
+
+##### Example
+
+```
+$ cjdnstool conf --file=./cjdroute-new.conf migrate
+Index: ./cjdroute-new.conf
+===================================================================
+--- ./cjdroute-new.conf
++++ ./cjdroute-new.conf
+@@ -274,13 +274,14 @@
+     },
+
+     // If set to non-zero, cjdns will not fork to the background.
+     // Recommended for use in conjunction with "logTo":"stdout".
+-    "noBackground": 0
++    "noBackground": 0,
+
+     // Pipe file will store in this path, recommended value: /tmp (for unix),
+     // \\.\pipe (for windows)
+     // /data/local/tmp (for rooted android)
+     // /data/data/AppName (for non-root android)
+     // This only needs to be specified if cjdroute's guess is incorrect
+     // "pipe": "/tmp"
++    "version": 2
+ }
+
+
+Making these changes in file [./cjdroute-new.conf]
+Old version will be stored in [./cjdroute-new.conf.old]
+Is this ok? [Y/n] Y
+./cjdroute-new.conf written
+$
+```
+
+#### cjdnstool conf put
+
+Once you have migrated your conf file, you can now make changes to it programmatically.
+Your changes will be performed using [cjdnsconf](https://github.com/cjdelisle/cjdnsconf)
+which will do its best to preserve comments and empty lines while altering the config
+file. `cjdnstool conf put` takes 2 mandatory arguments: path and value. The path is a
+JSON path, e.g. `security[0].name` and the value is a number, string or piece of JSON.
+
+Options for `cjdnstool conf put` are as follows:
+* `-d`, `--dryrun` Do not actually edit the conf file, just print a *unified diff*
+patch showing what would be changed and then exit.
+
+Tips:
+* If you want to delete an entry, you can do so by assigning it to null.
+* If you want to assign an entry to a string value which *could* parse as JSON, be
+careful to quote the string in order to avoid it being parsed before assignment.
+For example if you want to assign something to a string which is: `[2]`, you should
+use `cjdnstool conf put whatever.path '"[2]"'` because otherwise it will be assigned
+to a single element array containing the number 2.
+
+##### Example
+
+With the `-d` (dryrun) feature, you can see what your command *would* do if it was
+given, the output will be a patch in unified diff format.
+
+```
+$ cjdnstool conf put -d admin.password very_secret
+Index: /etc/cjdroute.conf
+===================================================================
+--- /etc/cjdroute.conf
++++ /etc/cjdroute.conf
+@@ -53,9 +53,9 @@
+         // Port to bind the admin RPC server to.
+         "bind": "127.0.0.1:11234",
+
+         // Password for admin RPC server.
+-        "password": "NONE"
++        "password": "very_secret"
+     },
+
+     // Interfaces to connect to the switch core.
+     "interfaces": {
+
+```
+
+Since null is not allowed in cjdns config objects, setting an entry to null deletes
+that entry. Furthermore, deleting an entry in a list or dictionary will clean out all
+comments which are just before that entry.
+
+```
+$ cjdnstool conf put -d security[4] null
+Index: /etc/cjdroute.conf
+===================================================================
+--- /etc/cjdroute.conf
++++ /etc/cjdroute.conf
+@@ -240,15 +240,8 @@
+         // this prevents many types of exploits from attacking the wider system.
+         // Default: enabled
+         { "noforks": 1 },
+
+-        // Seccomp is the most advanced sandboxing feature in cjdns, it uses
+-        // SECCOMP_BPF to filter the system calls which cjdns is able to make on a
+-        // linux system, strictly limiting it's access to the outside world
+-        // This will fail quietly on any non-linux system
+-        // Default: enabled
+-        { "seccomp": 1 },
+-
+         // The client sets up the core using a sequence of RPC calls, the responses
+         // to these calls are verified but in the event that the client crashes
+         // setup of the core completes, it could leave the core in an insecure state
+         // This call constitutes the client telling the core that the security rules
+
+```
+
+You can assign entire blocks of JSON to parts of the conf, but beware, any comments
+which live inside of that JSON block will go away.
+
+```
+$ cjdnstool conf put -d logging '{ "logTo": "stdout" }'
+Index: /etc/cjdroute.conf
+===================================================================
+--- /etc/cjdroute.conf
++++ /etc/cjdroute.conf
+@@ -258,13 +258,9 @@
+         { "setupComplete": 1 }
+     ],
+
+     // Logging
+-    "logging": {
+-        // Uncomment to have cjdns log to stdout rather than making logs available
+-        // via the admin socket.
+-        //        "logTo":"stdout"
+-    },
++    "logging": { "logTo": "stdout" },
+
+     // If set to non-zero, cjdns will not fork to the background.
+     // Recommended for use in conjunction with "logTo":"stdout".
+     "noBackground": 1,
+
+```
+
+You can also assign just a single entry in a block
+
+```
+$ cjdnstool conf put -d logging.logTo stdout
+Index: /etc/cjdroute.conf
+===================================================================
+--- /etc/cjdroute.conf
++++ /etc/cjdroute.conf
+@@ -262,8 +262,9 @@
+     "logging": {
+         // Uncomment to have cjdns log to stdout rather than making logs available
+         // via the admin socket.
+         //        "logTo":"stdout"
++        "logTo": "stdout"
+     },
+
+     // If set to non-zero, cjdns will not fork to the background.
+     // Recommended for use in conjunction with "logTo":"stdout".
+
+```
+
+#### cjdnstool conf get
+
+`cjdnstool conf get` works even without a version 2 configuration, so for this migration is
+not necessary. Like `cjdnstool conf put`, `cjdnstool conf get` takes a JSON path which selects
+an entry and it returns that entry. `cjdnstool conf get` takes no options.
+
+##### Example
+
+```
+$ cjdnstool conf get admin.bind
+127.0.0.1:11234
+$ cjdnstool conf get logging.logTo
+undefined
+$ cjdnstool conf get security[2]
+{"nofiles":0}
+$ cjdnstool conf get router.ipTunnel.outgoingConnections[0]
+cmnkylz1dx8mx3bdxku80yw20gqmg0s9nsrusdv0psnxnfhqfmu0.k
 ```
