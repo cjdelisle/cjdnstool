@@ -23,7 +23,7 @@ const readConf = (file, cb) => {
     Fs.readFile(file, 'utf8', (err, ret) => {
         if (err && err.code === 'ENOENT') {
             console.error('Could not find cjdns conf file at path [' + file + ']');
-            return void ret(err);
+            return void cb(err);
         } else if (!ret) {
             throw err;
         }
@@ -46,7 +46,7 @@ const migrate = (file, argv) => {
     const yes = (argv.indexOf('-y') > -1);
     if (yes) { argv.splice(argv.indexOf('-y'), 1); }
     readConf(file, (err, ret) => {
-        if (err) { return; }
+        if (!ret) { return; }
         const conf = Cjdnsconf.parse(ret, true);
         if (!conf.version || conf.version < 2) { conf.version = 2; }
         const result = Cjdnsconf.stringify(conf) + '\n';
@@ -120,7 +120,7 @@ const put = (file, argv) => {
         return void putUsage();
     }
     readConf(file, (err, ret) => {
-        if (err) { return; }
+        if (!ret) { return; }
         const conf = Cjdnsconf.parse(ret, false);
         if (!conf.version || conf.version < 2) {
             console.error("Not modifying config file because it seems to be using the old format");
@@ -136,6 +136,7 @@ const put = (file, argv) => {
         // eval is evil, except when it isn't...
         // jshint -W054
         const f = new Function('conf', 'val', 'conf.' + path + ' = val;');
+        // $FlowFixMe this is not wrong but flow doesn't understand new Function()
         f(conf, val);
         const result = Cjdnsconf.stringify(conf) + '\n';
         if (dryRun) {
@@ -164,11 +165,12 @@ const get = (file, argv) => {
         return void getUsage();
     }
     readConf(file, (err, ret) => {
-        if (err) { return; }
+        if (!ret) { return; }
         const conf = Cjdnsconf.parse(ret, true);
         // eval is evil, except when it isn't...
         // jshint -W054
         const f = new Function('conf', 'return conf.' + path);
+        // $FlowFixMe this is not wrong but flow doesn't understand new Function()
         const result = f(conf);
         if (typeof(result) === 'object') {
             console.log(JSON.stringify(result));
