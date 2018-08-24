@@ -1,6 +1,6 @@
 {
   "name": "cjdnstool",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Diagnostic tools for cjdns",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,7 @@
   "license": "GPL-3.0+",
   "dependencies": {
     "cjdnsaddr": "^1.0.0",
-    "cjdnsadmin": "^1.0.2",
+    "cjdnsadmin": "^1.0.3",
     "cjdnsann": "^0.1.4",
     "cjdnsconf": "^1.0.1",
     "cjdnsctrl": "0.0.6",
