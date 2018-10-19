@@ -3,6 +3,8 @@
 const Fs = require('fs');
 const Readline = require('readline');
 
+const nThen = require('nthen');
+const Cjdnsadmin = require('cjdnsadmin');
 const Cjdnsconf = require('cjdnsconf');
 const JsDiff = require('diff');
 
@@ -19,7 +21,7 @@ const usage = module.exports.usage = () => {
     console.log("    get <path>                    # retreive an entry in a v1 or v2 config");
 };
 
-const readConf = (file, cb) => {
+const readFile = (file, cb) => {
     Fs.readFile(file, 'utf8', (err, ret) => {
         if (err && err.code === 'ENOENT') {
             console.error('Could not find cjdns conf file at path [' + file + ']');
@@ -45,7 +47,7 @@ const migrate = (file, argv) => {
     const dryRun = isDryRun(argv);
     const yes = (argv.indexOf('-y') > -1);
     if (yes) { argv.splice(argv.indexOf('-y'), 1); }
-    readConf(file, (err, ret) => {
+    readFile(file, (err, ret) => {
         if (!ret) { return; }
         const conf = Cjdnsconf.parse(ret, true);
         if (!conf.version || conf.version < 2) { conf.version = 2; }
@@ -119,7 +121,7 @@ const put = (file, argv) => {
         console.error("Path [" + path + "] contains illegal characters other than: a-zA-Z0-9_[].");
         return void putUsage();
     }
-    readConf(file, (err, ret) => {
+    readFile(file, (err, ret) => {
         if (!ret) { return; }
         const conf = Cjdnsconf.parse(ret, false);
         if (!conf.version || conf.version < 2) {
@@ -164,7 +166,7 @@ const get = (file, argv) => {
         console.error("Path [" + path + "] contains characters other than <alphanumeric> _ [ ] .");
         return void getUsage();
     }
-    readConf(file, (err, ret) => {
+    readFile(file, (err, ret) => {
         if (!ret) { return; }
         const conf = Cjdnsconf.parse(ret, true);
         // eval is evil, except when it isn't...
@@ -180,15 +182,128 @@ const get = (file, argv) => {
     });
 };
 
-const main = module.exports.main = (argv /*:Array<string>*/) => {
-    let file = '/etc/cjdroute.conf';
-    if (argv[0] === '-f') {
-        file = argv[1];
-        argv.splice(0, 2);
-    } else if (argv[0].indexOf('--file=') === 0) {
-        file = argv[0].replace(/^--file=/, '');
-        argv.shift();
+const readConf = module.exports.readConf = (
+    file /*:?string*/,
+    cb /*:(?Error,?any)=>void*/
+) => {
+    file = file || "/etc/cjdroute.conf";
+    readFile(file, (err, ret) => {
+        if (!ret) { return void cb(err); }
+        let conf;
+        try {
+            conf = Cjdnsconf.parse(ret, false);
+        } catch (e) {
+            return void cb(e);
+        }
+        cb(undefined, conf);
+    });
+};
+
+const writeConf = module.exports.writeConf = (
+    file /*:?string*/,
+    conf /*:any*/,
+    cb /*:(?Error)=>void*/
+) => {
+    file = file || "/etc/cjdroute.conf";
+    try {
+        const result = Cjdnsconf.stringify(conf) + '\n';
+        Fs.writeFile(file, result, (err) => { cb(err); });
+    } catch (e) {
+        return void cb(e);
     }
+};
+
+const getFileName = module.exports.getFileName = (
+    argvX /*:Array<string>*/
+) /*:[string, Array<string>]*/ => {
+    const argv = argvX.slice(0);
+    const idx = argv.indexOf('-f');
+    if (idx > -1) {
+        return [ argv[idx + 1], argv.splice(idx, 2) ];
+    } else {
+        for (let i = 0; i < argv.length; i++) {
+            if (argv[i].startsWith('--file=')) {
+                return [ argv[i].replace(/^--file=/, ''), argv.splice(i, 1) ];
+            }
+        }
+    }
+    return [ '/etc/cjdroute.conf', argv ];
+};
+
+const canWrite = module.exports.canWrite = (
+    file /*:string*/,
+    cb /*:(?Error)=>void*/
+) => {
+    Fs.access(file, Fs.constants.W_OK, cb);
+};
+
+module.exports.confUpdater = (
+    update /*:(argv:Array<string>, cjdns:any, conf:any, cb:(number)=>void)=>void*/
+) => {
+    return (argvX /*:Array<string>*/) => {
+        const [ file, argv ] = getFileName(argvX);
+        let cjdns;
+        let conf;
+        let retCode = 0;
+        nThen((w) => {
+            Fs.access(file, Fs.constants.R_OK, (err) => {
+                if (err) {
+                    if (err.code === 'ENOENT') {
+                        console.error("Cannot find conf file [" + file +
+                            "] specify --file=<file> if it is in a different location");
+                    } else {
+                        console.error("Cannot access conf file [" + file +
+                            "] errno = [" + String(err.code) + "]");
+                    }
+                    process.exit(100);
+                }
+            });
+        }).nThen((w) => {
+            readConf(file, w((err, c) => {
+                if (err) {
+                    console.error("Error reading conf file [" + file +
+                        "] [" + err + "]");
+                    process.exit(100);
+                }
+                conf = c;
+            }));
+        }).nThen((w) => {
+            Fs.access(file, Fs.constants.W_OK, (err) => {
+                if (err) {
+                    console.error("Cannot write to [" + file +
+                        "] be sure you have the proper permissions");
+                    process.exit(100);
+                }
+            });
+        }).nThen((w) => {
+            Cjdnsadmin.connect(w((err, c) => {
+                if (!c) {
+                    console.error(err ? err.message : 'unknown error');
+                    process.exit(100);
+                }
+                cjdns = c;
+            }));
+        }).nThen((w) => {
+            update(argv, cjdns, conf, w((rc) => {
+                retCode = rc || 0;
+            }));
+        }).nThen((w) => {
+            cjdns.disconnect();
+            if (retCode) { return; }
+            writeConf(file, conf, w((err) => {
+                if (!err) { return; }
+                console.error("Failed to write config file, cjdroute is updated but " +
+                    "config file is not. Cause: [" + err + "]");
+                process.exit(100);
+            }));
+        }).nThen((w) => {
+            process.exit(retCode);
+        });
+    };
+};
+
+const main = module.exports.main = (argvX /*:Array<string>*/) => {
+    const [ file, argv ] = getFileName(argvX);
     if (argv[0] === 'migrate') { return migrate(file, argv.slice(1)); }
     if (argv[0] === 'put') { return put(file, argv.slice(1)); }
     if (argv[0] === 'get') { return get(file, argv.slice(1)); }
