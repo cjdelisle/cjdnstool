@@ -7,25 +7,12 @@ const nThen = require('nthen');
 const Pf = require('./pf.js');
 const Ctrl = require('./ctrl.js');
 
-module.exports.main = () => {
-    Cjdnsadmin.connect((err, c) => {
-        if (!c) { return void console.error(err ? err.message : 'unknown error'); }
-        const cjdns = c;
-        cjdns.SupernodeHunter_status((err, ret) => {
-            if (err) { throw err; }
-            if (ret.error !== 'none') { throw new Error("ERROR: " + ret.error); }
-            console.log(ret.activeSnode + ' authorized=' + Boolean(ret.usingAuthorizedSnode));
-            cjdns.disconnect();
-        });
-    });
-};
-
 /*::
 import type { Cjdnsniff_BencMsg_t, Cjdnsniff_CtrlMsg_t } from 'cjdnsniff'
 import type { Cjdnsctrl_ErrMsg_t, Cjdnsctrl_Ping_t } from 'cjdnsctrl'
 */
 
-const main = module.exports.main = () => {
+const main = module.exports.main = (argv /*:Array<string>*/) => {
     let cjdns;
     let snode;
     nThen((w) => {
@@ -45,9 +32,10 @@ const main = module.exports.main = () => {
             cjdns.disconnect();
             return;
         }
+        const raw = (argv.indexOf('--raw') > -1);
         const parsedSnode = Cjdnskeys.parseNodeName(snode);
-        const pfHandler = Pf.mkHandler(false);
-        const ctrlHandler = Ctrl.mkHandler();
+        const pfHandler = Pf.mkHandler(false, raw);
+        const ctrlHandler = Ctrl.mkHandler(raw);
         Cjdnsniff.sniffTraffic(cjdns, 'CJDHT', (err, ev) => {
             if (!ev) { throw err; }
             ev.on('error', (e) => { console.error(e); });

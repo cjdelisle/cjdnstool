@@ -11,8 +11,10 @@ import type { Cjdnsniff_BencMsg_t } from 'cjdnsniff'
 */
 
 const mkHandler = module.exports.mkHandler = (
-    showPeer /*:?boolean*/
+    showPeer /*:?boolean*/,
+    raw /*:?boolean*/
 ) => {
+    if (raw !== true) { raw = false; }
     if (showPeer !== false) { showPeer = true; }
     return (
         msg /*:Cjdnsniff_BencMsg_t*/,
@@ -81,12 +83,13 @@ const mkHandler = module.exports.mkHandler = (
             }
         }
         console.log(pr.join(' '));
+        if (raw) { console.log('Raw: ' + msg.rawBytes.toString('hex')); }
         (out || console.log)(pr.join(' '));
     };
 };
 
 const main = module.exports.main = (argv /*:Array<string>*/) => {
-    const handler = mkHandler(true);
+    const handler = mkHandler(true, argv.indexOf('--raw') > -1);
     Cjdnsadmin.connect((err, c) => {
         if (err) {
             console.error(err.message);

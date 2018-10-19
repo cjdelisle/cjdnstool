@@ -10,8 +10,11 @@ import type { Cjdnsniff_CtrlMsg_t } from 'cjdnsniff'
 import type { Cjdnsctrl_Ping_t, Cjdnsctrl_ErrMsg_t } from 'cjdnsctrl'
 */
 
-const mkHandler = module.exports.mkHandler = () => {
+const mkHandler = module.exports.mkHandler = (
+    raw /*:boolean*/
+) => {
     return (msg /*:Cjdnsniff_CtrlMsg_t*/, printer /*:?(string)=>void*/) => {
+        if (raw !== true) { raw = false; }
         const pr = [];
         pr.push(msg.routeHeader.isIncoming ? '>' : '<');
         pr.push(msg.routeHeader.switchHeader.label);
@@ -37,6 +40,7 @@ const mkHandler = module.exports.mkHandler = () => {
             }
         }
         (printer || console.log)(pr.join(' '));
+        if (raw) { (printer || console.log)('Raw: ' + msg.rawBytes.toString('hex')); }
     };
 };
 
@@ -46,14 +50,12 @@ const main = module.exports.main = (argv /*:Array<string>*/) => {
             console.error(err.message);
             return;
         }
-        const handler = mkHandler();
+        const handler = mkHandler(argv.indexOf('--raw') > -1);
         /*::if (!c) { throw new Error(); }*/
         Cjdnsniff.sniffTraffic(c, 'CTRL', (err, ev) => {
             if (!ev) { throw err; }
             ev.on('error', (e) => { console.error(e); });
-            ev.on('message', (msg) => {
-
-            });
+            ev.on('message', (msg) => { handler(msg); });
             console.log("Listening for CTRL traffic on node");
         });
     });
