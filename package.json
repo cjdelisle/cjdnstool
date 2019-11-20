@@ -1,6 +1,6 @@
 {
   "name": "cjdnstool",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Diagnostic tools for cjdns",
   "main": "index.js",
   "scripts": {
@@ -18,7 +18,7 @@
     "cjdnsctrl": "0.0.6",
     "cjdnsencode": "0.0.3",
     "cjdnskeys": "^0.1.5",
-    "cjdnsniff": "^0.2.10",
+    "cjdnsniff": "^0.2.11",
     "cjdnsplice": "^0.2.6",
     "diff": "^3.5.0",
     "minimist": "^1.2.0",
